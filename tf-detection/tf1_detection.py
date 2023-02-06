@@ -119,7 +119,6 @@ if __name__ == '__main__':
     #     'ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03',
     #     'faster_rcnn_resnet101_coco_2018_01_28',
     #     'faster_rcnn_nas_coco_2018_01_28',
-    #     # 'centernet_mobilenetv2fpn_512x512_coco17_od'  # tf2 model
     # ]
     main()
 
