@@ -1,0 +1,94 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+import numpy as np
+import tensorflow as tf
+gpu = tf.config.list_physical_devices('GPU')
+tf.config.set_visible_devices(gpu[0:], 'GPU')
+# print(gpu)
+tf.config.experimental.set_memory_growth(gpu[0], True)
+tf.config.experimental.set_memory_growth(gpu[1], True)
+import pathlib
+import time
+from PIL import Image
+from object_detection.utils import ops as util_ops
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as util_vis
+util_ops.tf = tf.compat.v1
+tf.gfile = tf.io.gfile
+
+Cycle_times = 3 # 每一个batch有效测算几次
+BATCH_SIZE  = 1 # batchsize大小
+TOLERANCE = 3 # 抛弃前多少个测试结果
+img_path = 'cat.jpg'
+
+def load_model(model_name):
+    # model_dir = '/root/.keras/datasets/'+model_name+'/saved_model' 
+    model_dir = '/workspace/Tensorflow/workspace/training_demo/exported-models/'+model_name+'/saved_model'
+    # print(model_dir)
+    # /workspace/Tensorflow/workspace/training_demo/exported-models/ssd_resnet50
+    return tf.saved_model.load(str(model_dir)).signatures['serving_default']
+
+
+def load_img2tensor(image_path):
+    image = np.array(Image.open(image_path))
+    input_tensor = tf.convert_to_tensor(image)
+    input_tensor = input_tensor[tf.newaxis, ...]
+    return input_tensor
+
+
+def load_img2batch(image_paths):
+    batch = []
+    for image in image_paths:
+        batch.append(np.array(Image.open(image)))
+    return tf.convert_to_tensor(batch, dtype='uint8')
+
+
+def main():
+    model_name = [
+        'mobilenet1',
+        'ssd_resnet50',
+        'ssd_resnet101',
+    ]
+
+    img = img_path
+
+    for j in range(len(model_name)):
+        # 模型加载的时间
+        # print('model name : {}'.format(model_name[j]))
+        t_load = time.time()
+        model_fn = load_model(model_name[j])
+        # print('load model time is {:.3f}'.format(1000*(time.time()-t_load)))
+        # 模型第一次推理的启动时间
+        t_infer_st = time.time()
+        model_fn(load_img2tensor(img))
+        # print('First inference time for model is {:.3f}'.format(1000*(time.time()-t_infer_st)))
+
+        batch_size = np.arange(1,BATCH_SIZE+1)
+
+        for i in batch_size:
+            # print('inference: batch size = {}'.format(i))
+            sum = 0.0
+            batch = load_img2batch([img] * i)
+            # print(batch.shape)
+
+            for j in range(Cycle_times+TOLERANCE):
+                _start = time.time()
+                model_fn(batch)
+                if j>=TOLERANCE:
+                    sum = sum + 1000*(time.time()-_start)
+                
+                    # print('  infer-{} t={:.3f}ms'.format(j-TOLERANCE+1, 1000*(time.time()-_start)))
+
+            dur = sum/(Cycle_times)
+            thrput = i*1000
+            thrput = thrput / dur
+            # print('batch size = {}, avg inference time is {:.3f} ms,throughput is {:.1f} req/s'.format(i,dur,thrput))
+            print('{} ,{:.2f} ,{:.2f}'.format(i,dur,thrput))
+        print()
+
+            
+
+if __name__ == '__main__':
+    main()
+
