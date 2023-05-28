@@ -32,9 +32,9 @@ parser.add_argument('--image', default='../imgs/test2.jpg', help='Path to the im
 parser.add_argument('--model_name', default='mnist', help='model name')
 args = parser.parse_args()
 
-Cycle_times = 1# 每一个batch有效测算几次
-BATCH_SIZE  = 2 # batchsize大小
-TOLERANCE = 10 # 抛弃前多少个测试结果
+Cycle_times = 10
+BATCH_SIZE  = 2 
+TOLERANCE = 10 
 MAX_MESSAGE_LENGTH = 1024*1024*1024
 
 def load_img2tensor(image_path):
@@ -101,7 +101,7 @@ def inference(model_name, batch):
         for i in range(Cycle_times+TOLERANCE):
             if i >=TOLERANCE:
                 send_time = time.time()
-                result = stub.Predict(request, 60.0)  # 30 secs timeout
+                result = stub.Predict(request, 60.0)  
                 response_time = timer()
                 sum = sum + (time.time() - send_time)*1000
                 print(tf.make_ndarray(result.outputs['probs']).shape)
