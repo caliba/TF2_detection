@@ -32,9 +32,9 @@ parser.add_argument('--image', default='../imgs/test2.jpg', help='Path to the im
 parser.add_argument('--model_name', default='mnist', help='model name')
 args = parser.parse_args()
 
-Cycle_times = 10 # 每一个batch有效测算几次
-BATCH_SIZE  = 4 # batchsize大小
-TOLERANCE = 10 # 抛弃前多少个测试结果
+Cycle_times = 10 
+BATCH_SIZE  = 4 
+TOLERANCE = 10 
 MAX_MESSAGE_LENGTH = 1024*1024*1024
 
 def load_img2tensor(image_path):
